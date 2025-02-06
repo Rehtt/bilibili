@@ -678,3 +678,71 @@ func (c *Client) BatchModifyRelation(param BatchModifyRelationParam) (*BatchModi
 	)
 	return execute[*BatchModifyRelationResult](c, method, url, param, fillCsrf(c))
 }
+
+type GetUserRelationParam struct {
+	Fid int `json:"fid"` // 目标用户 mid
+}
+
+type RelationDetail struct {
+	Mid       int   `json:"mid"`       // 目标用户 mid
+	Attribute int   `json:"attribute"` // 关系属性。0：未关注。2：已关注。6：已互粉。128：已拉黑
+	Mtime     int   `json:"mtime"`     // 关注对方时间。时间戳。未关注为 0
+	Tag       []int `json:"tag"`       // 分组 id
+	Special   int   `json:"special"`   // 特别关注标志。0：否。1：是
+}
+
+// GetUserRelation 查询用户与自己关系（仅关注）
+func (c *Client) GetUserRelation(param GetUserRelationParam) (*RelationDetail, error) {
+	const (
+		method = resty.MethodGet
+		url    = "https://api.bilibili.com/x/relation"
+	)
+	return execute[*RelationDetail](c, method, url, param)
+}
+
+type GetUserRelation2Param struct {
+	Mid int `json:"mid"` // 目标用户mid
+}
+
+type GetUserRelation2Result struct {
+	Relation   RelationDetail `json:"relation"`    // 目标用户对于当前用户的关系
+	BeRelation RelationDetail `json:"be_relation"` // 当前用户对于目标用户的关系
+}
+
+// GetUserRelation2 查询用户与自己关系（互相关系）
+func (c *Client) GetUserRelation2(param GetUserRelation2Param) (*GetUserRelation2Result, error) {
+	const (
+		method = resty.MethodGet
+		url    = "https://api.bilibili.com/x/space/wbi/acc/relation"
+	)
+	return execute[*GetUserRelation2Result](c, method, url, param, fillWbiHandler(c.wbi, c.GetCookies()))
+}
+
+type BatchGetUserRelationParam struct {
+	Fids []int `json:"fids"` // 目标用户 mid
+}
+
+// BatchGetUserRelation 批量查询用户与自己关系
+func (c *Client) BatchGetUserRelation(param BatchGetUserRelationParam) (map[int]*RelationDetail, error) {
+	const (
+		method = resty.MethodGet
+		url    = "https://api.bilibili.com/x/relation/relations"
+	)
+	return execute[map[int]*RelationDetail](c, method, url, param)
+}
+
+type RelationTag struct {
+	Tagid int    `json:"tagid"` // 分组 id。-10：特别关注。0：默认分组
+	Name  string `json:"name"`  // 分组名称
+	Count int    `json:"count"` // 分组成员数
+	Tip   string `json:"tip"`   // 提示信息
+}
+
+// GetRelationTags 查询关注分组列表
+func (c *Client) GetRelationTags() ([]RelationTag, error) {
+	const (
+		method = resty.MethodGet
+		url    = "https://api.bilibili.com/x/relation/tags"
+	)
+	return execute[[]RelationTag](c, method, url, nil)
+}
